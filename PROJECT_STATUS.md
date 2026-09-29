@@ -11,7 +11,7 @@ Last updated: 2026-09-29 (Phase 10)
 | 3 | Deterministic matching | **Complete and validated** (see below) |
 | 4 | Resume tailoring | **Complete and validated** (see below) |
 | 5 | Playwright service and mock application | **Complete and validated** (see below) |
-| 6 | n8n workflows (full) | **Complete offline; import into n8n not tested** (see below) |
+| 6 | n8n workflows (full) | **Complete; all 11 files import into n8n 2.41.3 (CLI). Never executed** (see below) |
 | 7 | Manual approval and submission gate | **Complete and validated against the synthetic site only** (see below) |
 | 8 | Tracker export | **Complete and validated with synthetic data; opened once in desktop Excel 16.0 (see Phase 10)** (see below) |
 | 9 | Optional AI | **Complete and validated with a mock provider and a fake HTTP transport; no real model was ever contacted** (see below) |
@@ -270,7 +270,7 @@ Phase 8 limitations:
 - The whole table is loaded in memory; fine for a personal tracker, not for hundreds of thousands of rows.
 - Times are UTC text, not Excel date cells, so they do not sort or filter as dates by type (they sort correctly as text).
 - The export sits in `exports\` under OneDrive, which syncs it to the cloud (see PRIVACY.md).
-- The workflow 09 change was not imported into n8n.
+- The workflow 09 change was imported into n8n only in the Phase 10 CLI import (never executed).
 
 ## Phase 9: implemented and tested (advisory AI, off by default)
 
@@ -321,13 +321,15 @@ Phase 9 limitations:
 | Check | Result |
 |---|---|
 | `python -m compileall app scripts tests run.py` | exit 0 |
-| `ruff check .` / `ruff format --check .` | All checks passed; 96 files already formatted |
-| `mypy` (strict) | no issues in 91 source files |
+| `ruff check .` / `ruff format --check .` | All checks passed; 97 files already formatted |
+| `mypy` (strict) | no issues in 92 source files |
 | `pip check` | no broken requirements |
-| `pytest` | **437 passed, 0 failed** (3 in `tests/test_end_to_end.py`) |
+| `pytest` | **453 passed, 0 failed** (3 in `tests/test_end_to_end.py`, 16 in `tests/test_docker_config.py`) |
 | `run.py validate-config` / `validate-workflows` | config: 3 expected example-file WARNs; all 11 workflow files OK |
 
 The end-to-end tests were also re-run alone after a later edit to that file (3 passed).
+
+Native container simulation (2026-09-29, no Docker engine): only the files the Dockerfile copies, a clean venv and `pip install -r requirements.txt` (exit 0, `pip check` clean), then `uvicorn app.main:app_factory` with the compose environment (`API_HOST=0.0.0.0`, headless, `API_KEY` set). The Dockerfile HEALTHCHECK request returned 200, `/health` reported `startup_ok` with safe flags and writable directories, `run.py serve` without `API_KEY` on `0.0.0.0` exited 1, and config validation passed. The first run failed with `No module named 'httpx'`: the app imports `httpx` but `requirements.txt` only listed `httpx2`. Fixed by adding `httpx>=0.27`. This does not test the image build, the Linux base image, Chromium in the image, volumes or the compose network.
 
 Desktop Excel check (2026-09-29): a synthetic export (2 rows, one with a `=HYPERLINK(...)` title) was opened read-only in Excel 16.0 through COM automation. The sheet is `Applications`, range A1:Y3, header row frozen, all 25 headers correct. The formula payload is stored as text (not a formula) and displays with a visible leading `'`. Only this one Excel version and one file were checked; no Excel-side editing, filtering or saving was tried.
 
@@ -335,8 +337,9 @@ This validates the Python service, the approval gate and the tracker export toge
 
 ## Not verified / known limitations
 
-- **n8n workflow import was not tested.** n8n, Node.js and Docker are not installed here; only offline structural validation ran (JSON, node/connection integrity, no orphan nodes, no hardcoded secrets). Node `typeVersion` values (IF 2.2, Set 3.4, HTTP Request 4.2, Schedule Trigger 1.2) target n8n 2.x; `docker-compose.yml` pins n8n 2.41.3, the current stable release at time of writing.
-- **Docker build and `docker compose up` were not run.** Docker Desktop 29.8.1 was installed later, but it refuses to start on this machine ("Virtualization support not detected"), so the engine never ran. This needs virtualization enabled in the BIOS or by IT.
+- **n8n workflows were imported but never executed.** On 2026-09-29 `n8n import:workflow --separate` (n8n 2.41.3, the version pinned in `docker-compose.yml`, installed with a portable Node 24 outside the project) imported all 11 files into a throwaway database ("Successfully imported 11 workflows", ids `jaWf00Master` to `jaWf10ErrHandler` listed by `list:workflow`). The n8n server, the editor, the credential setup, the schedule triggers and every node's runtime behaviour were not run. Node `typeVersion` values (IF 2.2, Set 3.4, HTTP Request 4.2, Schedule Trigger 1.2) were accepted by the importer, which does not prove they behave correctly.
+- **Docker build and `docker compose up` were not run locally.** Docker Desktop refused to start on this machine ("Virtualization support not detected", WSL not installed), and it was later removed. Substitutes: `tests/test_docker_config.py` (static checks of the Dockerfile, compose file, `.dockerignore` and `requirements.txt` coverage) and a native simulation (Dockerfile COPY set plus a clean venv install). The simulation found that `httpx` was missing from `requirements.txt` (it would have crashed the image at start-up); that is fixed. `.github/workflows/docker-check.yml` runs the real build, `compose up`, health, non-root, Chromium and n8n import checks on GitHub; its result is recorded below once it has run.
+- In a container the review browser is headless, so form review for approval should run on the host, not in Docker.
 - Chromium is not installed (the download timed out in Phase 5); an installed Edge was used instead, see Phase 5 limitations. `/health` only checks the Python package.
 - No community Playwright node has been evaluated or installed.
 - `scripts/export_workflows.py` and `scripts/import_workflows.py` are deferred to Phase 6 (README documents the raw n8n CLI commands).
@@ -353,4 +356,4 @@ This validates the Python service, the approval gate and the tracker export toge
 
 ## Unsupported functionality (current)
 
-Nothing further is planned. n8n workflows exist but were never run in n8n. No portal is supported or validated, submission has only ever been exercised against the synthetic local site, and no real AI model was ever contacted.
+Nothing further is planned. n8n workflows import into n8n 2.41.3 but were never executed there. No portal is supported or validated, submission has only ever been exercised against the synthetic local site, and no real AI model was ever contacted.
