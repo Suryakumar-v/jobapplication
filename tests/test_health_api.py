@@ -23,6 +23,24 @@ def test_health_reports_ok_with_safe_defaults(client: TestClient) -> None:
     assert body["browser"]["playwright_installed"] is True
 
 
+def test_health_only_requires_config_to_be_readable(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    real_access = os.access
+
+    def read_only_config(path: object, mode: int) -> bool:
+        if Path(str(path)).name == "config" and mode == os.W_OK:
+            return False
+        return real_access(path, mode)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(os, "access", read_only_config)
+    body = client.get("/health").json()
+    assert body["directories"]["config"] is True
+    assert body["startup_ok"] is True
+
+
 def test_health_never_exposes_secrets(tmp_path: Path) -> None:
     settings = Settings(
         project_root=tmp_path, config_directory=PROJECT_ROOT / "config", api_key="super-secret-key"

@@ -56,8 +56,9 @@ def _database_health(engine: Engine) -> DatabaseHealth:
 
 
 def _directory_health(settings: Settings) -> dict[str, bool]:
+    # Config is mounted read-only in Docker, so it only needs to be readable.
     return {
-        name: path.is_dir() and os.access(path, os.W_OK)
+        name: path.is_dir() and os.access(path, os.R_OK if name == "config" else os.W_OK)
         for name, path in settings.required_directories().items()
     }
 
