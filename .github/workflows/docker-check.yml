@@ -28,10 +28,15 @@ jobs:
 
       - name: Compose refuses to start without secrets
         run: |
-          if env -i PATH="$PATH" HOME="$HOME" docker compose --env-file /dev/null config --quiet 2>err.txt; then
+          # Compose reports only the first missing variable, so supply one secret at a time.
+          if env -i PATH="$PATH" HOME="$HOME" N8N_ENCRYPTION_KEY=x docker compose --env-file /dev/null config --quiet 2>err.txt; then
             echo "compose accepted a missing API_KEY"; exit 1
           fi
           grep -q "API_KEY" err.txt
+          if env -i PATH="$PATH" HOME="$HOME" API_KEY=x docker compose --env-file /dev/null config --quiet 2>err.txt; then
+            echo "compose accepted a missing N8N_ENCRYPTION_KEY"; exit 1
+          fi
+          grep -q "N8N_ENCRYPTION_KEY" err.txt
 
       - name: Build and start both services
         run: docker compose up -d --build --wait --wait-timeout 240
