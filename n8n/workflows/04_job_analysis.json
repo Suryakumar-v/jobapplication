@@ -1,0 +1,194 @@
+{
+  "id": "jaWf04Analysis",
+  "name": "04 Job Analysis",
+  "nodes": [
+    {
+      "id": "04000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000002",
+      "name": "Called By Master Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 200],
+      "parameters": { "inputSource": "passthrough" }
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000003",
+      "name": "Use First Item Only",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [220, 200],
+      "parameters": { "maxItems": 1 }
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000004",
+      "name": "Load Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "api_url",
+              "type": "string",
+              "value": "={{ $env.JOB_AUTOMATION_API_URL || 'http://host.docker.internal:8000' }}"
+            },
+            {
+              "id": "c2",
+              "name": "match_threshold",
+              "type": "number",
+              "value": "={{ Number($env.JOB_MATCH_THRESHOLD || 75) }}"
+            },
+            {
+              "id": "c3",
+              "name": "max_jobs_per_run",
+              "type": "number",
+              "value": "={{ Math.min(Number($env.MAX_JOBS_PER_RUN || 50), 1000) }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000005",
+      "name": "Analyze Discovered Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_url }}/matching/analyze",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ limit: $json.max_jobs_per_run }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000006",
+      "name": "Stage Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1000, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "stage", "type": "string", "value": "04_job_analysis" },
+            { "id": "s2", "name": "requested", "type": "number", "value": "={{ $json.requested }}" },
+            { "id": "s3", "name": "analyzed", "type": "number", "value": "={{ $json.analyzed }}" },
+            { "id": "s4", "name": "apply", "type": "number", "value": "={{ $json.apply }}" },
+            { "id": "s5", "name": "review", "type": "number", "value": "={{ $json.review }}" },
+            { "id": "s6", "name": "skip", "type": "number", "value": "={{ $json.skip }}" },
+            { "id": "s7", "name": "ineligible", "type": "number", "value": "={{ $json.ineligible }}" },
+            { "id": "s8", "name": "not_allowed", "type": "array", "value": "={{ $json.not_allowed }}" },
+            { "id": "s9", "name": "not_found", "type": "array", "value": "={{ $json.not_found }}" },
+            {
+              "id": "s10",
+              "name": "using_example_config",
+              "type": "boolean",
+              "value": "={{ $json.using_example_config }}"
+            },
+            {
+              "id": "s11",
+              "name": "apply_below_threshold",
+              "type": "number",
+              "value": "={{ $json.outcomes.filter(o => o.result.recommendation === 'APPLY' && o.result.overall_score < $('Load Configuration').first().json.match_threshold).length }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000007",
+      "name": "IF No APPLY Below Threshold",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1260, 100],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "chk-threshold",
+              "leftValue": "={{ $json.apply_below_threshold }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000008",
+      "name": "Stop: APPLY Below Threshold",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [1520, 220],
+      "parameters": {
+        "errorMessage": "The API returned APPLY for a job scored below JOB_MATCH_THRESHOLD in n8n. Make the threshold identical in the API and n8n environments (default 75)."
+      }
+    },
+    {
+      "id": "04000000-0000-4000-8000-000000000009",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 04 Job Analysis\nCalls `POST /matching/analyze` for jobs in DISCOVERED status. Scoring is deterministic and runs in the API (no AI). The API applies the threshold (default 75), mandatory-requirement checks, filters and the daily cap; this workflow only cross-checks that no APPLY result is below the threshold it knows about.\n\nIf `using_example_config` is true, the synthetic example profile was used: do not act on those results.",
+        "height": 180,
+        "width": 720
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Called By Master Workflow": {
+      "main": [[{ "node": "Use First Item Only", "type": "main", "index": 0 }]]
+    },
+    "Use First Item Only": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Load Configuration": {
+      "main": [[{ "node": "Analyze Discovered Jobs", "type": "main", "index": 0 }]]
+    },
+    "Analyze Discovered Jobs": {
+      "main": [[{ "node": "Stage Summary", "type": "main", "index": 0 }]]
+    },
+    "Stage Summary": {
+      "main": [[{ "node": "IF No APPLY Below Threshold", "type": "main", "index": 0 }]]
+    },
+    "IF No APPLY Below Threshold": {
+      "main": [
+        [],
+        [{ "node": "Stop: APPLY Below Threshold", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1", "errorWorkflow": "jaWf10ErrHandler" },
+  "active": false
+}

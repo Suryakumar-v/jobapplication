@@ -1,0 +1,46 @@
+# EDITABLE EXAMPLE for a network-security professional. Replace with your own preferences.
+# Copy to config/search_preferences.yaml.
+
+preferred_titles:
+  - Network Security Engineer
+  - Senior Network Security Engineer
+  - Security Engineer
+  - NAC Engineer
+  - Firewall Engineer
+excluded_titles:
+  - Intern
+  - Sales Engineer
+  - Help Desk
+preferred_locations:
+  - Springfield
+  - Remote
+remote_preference: any        # any | remote | hybrid | onsite
+employment_types:
+  - Full-time
+required_skills:
+  - Network Security
+  - Firewall policy management
+  - RADIUS
+preferred_skills:
+  - NAC
+  - Aruba ClearPass
+  - Check Point
+  - Cisco FTD
+  - Cisco Secure Firewall
+  - cdFMC
+  - Cisco SD-WAN
+  - Splunk
+  - CyberArk
+  - TACACS+
+  - EAP-TLS
+  - Python automation
+  - Certificate troubleshooting
+  - Incident management
+  - Change management
+excluded_companies:
+  - Example Staffing Spam Inc.
+preferred_companies: []
+minimum_salary: null          # annual, in your currency; null = not filtered
+maximum_job_age_days: 30
+max_jobs_per_run: 50
+max_applications_per_day: 10

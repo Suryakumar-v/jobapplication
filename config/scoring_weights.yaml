@@ -1,0 +1,13 @@
+# Score weights (percent, must sum to 100) and the minimum score to proceed.
+# A score >= minimum_score never overrides a missing mandatory requirement.
+
+minimum_score: 75
+
+weights:
+  required_skills: 35
+  relevant_experience: 20
+  preferred_skills: 10
+  certifications: 10
+  job_title_relevance: 10
+  location_and_remote: 10
+  employment_type: 5

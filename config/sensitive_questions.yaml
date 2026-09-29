@@ -1,0 +1,63 @@
+# Keywords that mark a question as sensitive. Matching fields are NEVER auto-filled;
+# they are left blank and reported for manual review. Any unmatched, unmapped field is UNKNOWN
+# and is also left blank. Extend the lists, do not remove categories.
+
+categories:
+  SENSITIVE:
+    - citizenship
+    - nationality
+    - marital status
+    - criminal
+    - conviction
+    - background check
+    - age
+    - date of birth
+    - birth date
+  LEGAL:
+    - i certify
+    - i agree
+    - i acknowledge
+    - terms and conditions
+    - privacy policy
+    - declaration
+    - attest
+    - non-compete
+  DEMOGRAPHIC:
+    - gender
+    - race
+    - ethnicity
+    - disability
+    - veteran
+    - sexual orientation
+    - pronouns
+    - self-identif
+  WORK_AUTHORIZATION:
+    - authorized to work
+    - work authorization
+    - legally authorized
+    - right to work
+    - work permit
+    - eligible to work
+  SPONSORSHIP:
+    - sponsorship
+    - visa
+    - require sponsorship
+  SALARY:
+    - salary
+    - compensation
+    - pay expectation
+    - desired pay
+    - expected pay
+    - hourly rate
+  SECURITY_CLEARANCE:
+    - security clearance
+    - clearance level
+    - government clearance
+  RELOCATION:
+    - relocat
+    - willing to move
+  CONFLICT_OF_INTEREST:
+    - conflict of interest
+    - related to an employee
+    - family member employed
+    - government official

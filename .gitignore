@@ -1,0 +1,29 @@
+# Environment
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Personal data - never commit
+config/candidate_profile.yaml
+config/search_preferences.yaml
+config/safe_answers.yaml
+data/*
+!data/.gitkeep
+resumes/source/*
+!resumes/source/.gitkeep
+resumes/generated/*
+!resumes/generated/.gitkeep
+screenshots/*
+!screenshots/.gitkeep
+exports/*
+!exports/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# n8n runtime
+n8n/data/
+n8n/credentials/*.json

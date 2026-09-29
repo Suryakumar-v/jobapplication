@@ -1,0 +1,56 @@
+{
+  "id": "jaWf08Submission",
+  "name": "08 Application Submission",
+  "nodes": [
+    {
+      "id": "08000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "08000000-0000-4000-8000-000000000002",
+      "name": "Submission Not Available",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [260, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "stage", "type": "string", "value": "08_application_submission" },
+            { "id": "s2", "name": "implemented", "type": "boolean", "value": false },
+            { "id": "s3", "name": "submitted", "type": "boolean", "value": false },
+            {
+              "id": "s4",
+              "name": "message",
+              "type": "string",
+              "value": "No workflow submits applications. A person approves and submits with `python run.py approve <application_id>`, which asks for the exact text SUBMIT <application_id>."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "08000000-0000-4000-8000-000000000003",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 08 Application Submission - DISABLED\nThis workflow deliberately contains no HTTP Request node and no browser call, and the master workflow never runs it. Submission exists only behind the approval endpoints, which a person uses through `python run.py approve <application_id>`. Workflows must never call them.",
+        "height": 150,
+        "width": 620
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Submission Not Available", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "errorWorkflow": "jaWf10ErrHandler" },
+  "active": false
+}

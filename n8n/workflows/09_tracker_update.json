@@ -1,0 +1,218 @@
+{
+  "id": "jaWf09Tracker",
+  "name": "09 Tracker Update",
+  "nodes": [
+    {
+      "id": "09000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000002",
+      "name": "Called By Master Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 200],
+      "parameters": { "inputSource": "passthrough" }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000003",
+      "name": "Use First Item Only",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [220, 200],
+      "parameters": { "maxItems": 1 }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000004",
+      "name": "Load Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "api_url",
+              "type": "string",
+              "value": "={{ $env.JOB_AUTOMATION_API_URL || 'http://host.docker.internal:8000' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000005",
+      "name": "List Applications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, 100],
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.api_url }}/applications?limit=200",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000006",
+      "name": "Collect Applications",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1000, 100],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "items",
+        "options": {}
+      }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000007",
+      "name": "Stage Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1260, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "stage", "type": "string", "value": "09_tracker_update" },
+            {
+              "id": "s2",
+              "name": "total_applications",
+              "type": "number",
+              "value": "={{ ($json.items || []).filter(a => a.application_id).length }}"
+            },
+            {
+              "id": "s3",
+              "name": "by_status",
+              "type": "object",
+              "value": "={{ ($json.items || []).filter(a => a.application_id).reduce((counts, a) => { counts[a.application_status] = (counts[a.application_status] || 0) + 1; return counts; }, {}) }}"
+            },
+            {
+              "id": "s4",
+              "name": "note",
+              "type": "string",
+              "value": "Status snapshot; the next node writes the Excel and CSV tracker files."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000009",
+      "name": "Export Tracker Files",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1520, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Load Configuration').item.json.api_url }}/exports/tracker",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ formats: ['xlsx', 'csv'] }) }}",
+        "options": { "timeout": 60000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000010",
+      "name": "Export Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1780, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "e1", "name": "stage", "type": "string", "value": "09_tracker_update" },
+            {
+              "id": "e2",
+              "name": "total_applications",
+              "type": "number",
+              "value": "={{ $('Stage Summary').item.json.total_applications }}"
+            },
+            {
+              "id": "e3",
+              "name": "by_status",
+              "type": "object",
+              "value": "={{ $('Stage Summary').item.json.by_status }}"
+            },
+            {
+              "id": "e4",
+              "name": "exported_rows",
+              "type": "number",
+              "value": "={{ $json.rows }}"
+            },
+            {
+              "id": "e5",
+              "name": "exported_files",
+              "type": "object",
+              "value": "={{ $json.files }}"
+            },
+            {
+              "id": "e6",
+              "name": "note",
+              "type": "string",
+              "value": "Files are written to EXPORT_DIRECTORY on the API host (exports/applications.xlsx and .csv). Close the workbook in Excel before running."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "09000000-0000-4000-8000-000000000008",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 09 Tracker Update\nCounts applications by status via `GET /applications`, then asks the API to write `exports/applications.xlsx` and `.csv` via `POST /exports/tracker`. Every status change is already recorded by the API in SQLite with a history row; the export is a snapshot of the database and changes nothing in it. Cells are neutralised against spreadsheet formulas. If the workbook is open in Excel the API answers 409; close it and run again.",
+        "height": 170,
+        "width": 720
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Called By Master Workflow": {
+      "main": [[{ "node": "Use First Item Only", "type": "main", "index": 0 }]]
+    },
+    "Use First Item Only": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Load Configuration": {
+      "main": [[{ "node": "List Applications", "type": "main", "index": 0 }]]
+    },
+    "List Applications": {
+      "main": [[{ "node": "Collect Applications", "type": "main", "index": 0 }]]
+    },
+    "Collect Applications": {
+      "main": [[{ "node": "Stage Summary", "type": "main", "index": 0 }]]
+    },
+    "Stage Summary": {
+      "main": [[{ "node": "Export Tracker Files", "type": "main", "index": 0 }]]
+    },
+    "Export Tracker Files": {
+      "main": [[{ "node": "Export Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "errorWorkflow": "jaWf10ErrHandler" },
+  "active": false
+}

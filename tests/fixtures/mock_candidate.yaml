@@ -1,0 +1,27 @@
+# Synthetic candidate used only by tests. Not a real person.
+personal:
+  first_name: Test
+  last_name: Candidate
+  email: test.candidate@example.com
+  phone: "+1-555-0199"
+  city: Springfield
+  country: United States
+  current_job_title: Network Security Engineer
+summary: Synthetic profile for automated tests.
+total_years_experience: 6
+skills:
+  - name: Network Security
+    years: 6
+  - name: RADIUS
+    years: 4
+  - name: Firewall policy management
+    years: 5
+certifications: []
+experience:
+  - employer: Synthetic Employer One
+    title: Network Security Engineer
+    start_date: 2019-01-01
+    end_date: null
+    bullets:
+      - Maintained firewall policies and RADIUS authentication.
+education: []

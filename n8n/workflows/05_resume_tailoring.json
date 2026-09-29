@@ -1,0 +1,222 @@
+{
+  "id": "jaWf05Tailoring",
+  "name": "05 Resume Tailoring",
+  "nodes": [
+    {
+      "id": "05000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000002",
+      "name": "Called By Master Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 200],
+      "parameters": { "inputSource": "passthrough" }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000003",
+      "name": "Use First Item Only",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [220, 200],
+      "parameters": { "maxItems": 1 }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000004",
+      "name": "Load Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "api_url",
+              "type": "string",
+              "value": "={{ $env.JOB_AUTOMATION_API_URL || 'http://host.docker.internal:8000' }}"
+            },
+            {
+              "id": "c2",
+              "name": "max_applications_per_day",
+              "type": "number",
+              "value": "={{ Math.max(1, Number($env.MAX_APPLICATIONS_PER_DAY || 10)) }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000005",
+      "name": "List Analyzed Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, 100],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.api_url }}/jobs?status=ANALYZED&limit=200",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000006",
+      "name": "IF Recommendation Is APPLY",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1000, 100],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "chk-apply",
+              "leftValue": "={{ $json.recommendation }}",
+              "rightValue": "APPLY",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000007",
+      "name": "Limit To Daily Maximum",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [1260, 0],
+      "parameters": {
+        "maxItems": "={{ $('Load Configuration').first().json.max_applications_per_day }}"
+      }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000008",
+      "name": "Tailor Resume",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1520, 0],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Load Configuration').first().json.api_url }}/resumes/tailor/{{ $json.job_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 60000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000009",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1780, 100],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "items",
+        "options": {}
+      }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000010",
+      "name": "Stage Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2040, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "stage", "type": "string", "value": "05_resume_tailoring" },
+            {
+              "id": "s2",
+              "name": "tailored",
+              "type": "number",
+              "value": "={{ ($json.items || []).filter(i => i.application_id).length }}"
+            },
+            {
+              "id": "s3",
+              "name": "failed",
+              "type": "number",
+              "value": "={{ ($json.items || []).filter(i => i.error).length }}"
+            },
+            {
+              "id": "s4",
+              "name": "applications",
+              "type": "array",
+              "value": "={{ ($json.items || []).filter(i => i.application_id).map(i => ({ application_id: i.application_id, job_id: i.job_id, version: i.version })) }}"
+            },
+            {
+              "id": "s5",
+              "name": "errors",
+              "type": "array",
+              "value": "={{ ($json.items || []).filter(i => i.error).map(i => String(i.error.message || i.error)) }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "05000000-0000-4000-8000-000000000011",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 05 Resume Tailoring\nLists ANALYZED jobs, keeps those with recommendation APPLY (at most MAX_APPLICATIONS_PER_DAY), and calls `POST /resumes/tailor/{job_id}` for each. The API creates a new .docx that only reorders facts already in your profile and master resume, validates it independently and refuses to keep it if validation fails. The master resume is never modified.\n\nA failed job is reported in `errors` and does not stop the others.",
+        "height": 180,
+        "width": 720
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Called By Master Workflow": {
+      "main": [[{ "node": "Use First Item Only", "type": "main", "index": 0 }]]
+    },
+    "Use First Item Only": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Load Configuration": {
+      "main": [[{ "node": "List Analyzed Jobs", "type": "main", "index": 0 }]]
+    },
+    "List Analyzed Jobs": {
+      "main": [[{ "node": "IF Recommendation Is APPLY", "type": "main", "index": 0 }]]
+    },
+    "IF Recommendation Is APPLY": {
+      "main": [[{ "node": "Limit To Daily Maximum", "type": "main", "index": 0 }]]
+    },
+    "Limit To Daily Maximum": {
+      "main": [[{ "node": "Tailor Resume", "type": "main", "index": 0 }]]
+    },
+    "Tailor Resume": {
+      "main": [[{ "node": "Collect Results", "type": "main", "index": 0 }]]
+    },
+    "Collect Results": {
+      "main": [[{ "node": "Stage Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "errorWorkflow": "jaWf10ErrHandler" },
+  "active": false
+}

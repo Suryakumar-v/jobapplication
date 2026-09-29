@@ -1,0 +1,76 @@
+# Secrets come from .env (see .env.example). Nothing secret is stored in this file.
+# Both services are published on 127.0.0.1 only.
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:${N8N_IMAGE_TAG:-2.41.3}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${N8N_HOST_PORT:-5678}:5678"
+    environment:
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?Set N8N_ENCRYPTION_KEY in .env}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-UTC}
+      TZ: ${GENERIC_TIMEZONE:-UTC}
+      N8N_HOST: localhost
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://localhost:${N8N_HOST_PORT:-5678}/
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      # Workflows read the configuration values below through $env.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      JOB_AUTOMATION_API_URL: http://job-automation-api:8000
+      JOB_MATCH_THRESHOLD: ${JOB_MATCH_THRESHOLD:-75}
+      MAX_JOBS_PER_RUN: ${MAX_JOBS_PER_RUN:-50}
+      MAX_APPLICATIONS_PER_DAY: ${MAX_APPLICATIONS_PER_DAY:-10}
+      MANUAL_APPROVAL_REQUIRED: ${MANUAL_APPROVAL_REQUIRED:-true}
+      AUTOMATIC_SUBMISSION_ENABLED: ${AUTOMATIC_SUBMISSION_ENABLED:-false}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_PROVIDER: ${AI_PROVIDER:-none}
+      APPROVAL_TOKEN_EXPIRY: ${APPROVAL_TOKEN_EXPIRY:-3600}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n/workflows:/workflows:ro
+    depends_on:
+      job-automation-api:
+        condition: service_healthy
+
+  job-automation-api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"
+    environment:
+      API_HOST: 0.0.0.0
+      API_KEY: ${API_KEY:?Set API_KEY in .env}
+      JOB_MATCH_THRESHOLD: ${JOB_MATCH_THRESHOLD:-75}
+      MAX_JOBS_PER_RUN: ${MAX_JOBS_PER_RUN:-50}
+      MAX_APPLICATIONS_PER_DAY: ${MAX_APPLICATIONS_PER_DAY:-10}
+      MANUAL_APPROVAL_REQUIRED: ${MANUAL_APPROVAL_REQUIRED:-true}
+      AUTOMATIC_SUBMISSION_ENABLED: ${AUTOMATIC_SUBMISSION_ENABLED:-false}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_PROVIDER: ${AI_PROVIDER:-none}
+      AI_BASE_URL: ${AI_BASE_URL:-http://127.0.0.1:11434/v1}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_TIMEOUT: ${AI_TIMEOUT:-60}
+      AI_MAX_INPUT_CHARS: ${AI_MAX_INPUT_CHARS:-8000}
+      AI_ALLOW_REMOTE: ${AI_ALLOW_REMOTE:-false}
+      APPROVAL_TOKEN_EXPIRY: ${APPROVAL_TOKEN_EXPIRY:-3600}
+      # No display exists in the container, so the browser must be headless here.
+      PLAYWRIGHT_HEADLESS: "true"
+      PLAYWRIGHT_SLOW_MO: ${PLAYWRIGHT_SLOW_MO:-250}
+      PLAYWRIGHT_TIMEOUT: ${PLAYWRIGHT_TIMEOUT:-30000}
+      PLAYWRIGHT_SESSION_TIMEOUT: ${PLAYWRIGHT_SESSION_TIMEOUT:-900}
+    volumes:
+      - api_data:/app/data
+      - api_screenshots:/app/screenshots
+      - api_logs:/app/logs
+      - ./resumes:/app/resumes
+      - ./exports:/app/exports
+      - ./config:/app/config:ro
+
+volumes:
+  n8n_data:
+  api_data:
+  api_screenshots:
+  api_logs:

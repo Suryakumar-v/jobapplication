@@ -1,0 +1,207 @@
+{
+  "id": "jaWf06Preparation",
+  "name": "06 Application Preparation",
+  "nodes": [
+    {
+      "id": "06000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000002",
+      "name": "Called By Master Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 200],
+      "parameters": { "inputSource": "passthrough" }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000003",
+      "name": "Use First Item Only",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [220, 200],
+      "parameters": { "maxItems": 1 }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000004",
+      "name": "Load Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "api_url",
+              "type": "string",
+              "value": "={{ $env.JOB_AUTOMATION_API_URL || 'http://host.docker.internal:8000' }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000005",
+      "name": "List Prepared Applications",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, 100],
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.api_url }}/applications?status=PREPARED&limit=3",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000006",
+      "name": "IF Resume Is Ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1000, 100],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "chk-resume",
+              "leftValue": "={{ $json.has_tailored_resume === true }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000007",
+      "name": "Start Form For Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1260, 0],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Load Configuration').first().json.api_url }}/applications/{{ $json.application_id }}/form/start",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": { "timeout": 180000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000008",
+      "name": "Collect Results",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1520, 0],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "items",
+        "options": {}
+      }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000009",
+      "name": "Stage Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1780, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "stage", "type": "string", "value": "06_application_preparation" },
+            {
+              "id": "s2",
+              "name": "awaiting_approval",
+              "type": "number",
+              "value": "={{ ($json.items || []).filter(i => i.application_status === 'AWAITING_APPROVAL').length }}"
+            },
+            {
+              "id": "s3",
+              "name": "blocked",
+              "type": "number",
+              "value": "={{ ($json.items || []).filter(i => i.application_status === 'FAILED').length }}"
+            },
+            {
+              "id": "s4",
+              "name": "errors",
+              "type": "array",
+              "value": "={{ ($json.items || []).filter(i => i.error).map(i => String(i.error.message || i.error)) }}"
+            },
+            {
+              "id": "s5",
+              "name": "applications",
+              "type": "array",
+              "value": "={{ ($json.items || []).filter(i => i.application_id).map(i => ({ application_id: i.application_id, application_status: i.application_status, outcome: i.outcome, filled: i.filled, uploaded: i.uploaded, left_blank: i.left_blank, failed: i.failed, manual_field_count: (i.manual_fields || []).length, blockers: i.blockers })) }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "06000000-0000-4000-8000-000000000010",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 06 Application Preparation (never submits)\nTakes up to 3 PREPARED applications (the API keeps at most 3 review browsers open) and calls `POST /applications/{id}/form/start`. The browser service opens the job's own URL, fills only approved safe answers, attaches the tailored resume and stops. It never clicks Submit; submit requests are blocked in the browser.\n\nSign-in, CAPTCHA and verification pages stop the run and the application becomes FAILED with a reason. Applications end as AWAITING_APPROVAL, meaning `filled for review`, not complete: check `manual_field_count` and the screenshots.\n\nOnly local pages and hosts in PLAYWRIGHT_ALLOWED_HOSTS can be opened.",
+        "height": 260,
+        "width": 720
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Called By Master Workflow": {
+      "main": [[{ "node": "Use First Item Only", "type": "main", "index": 0 }]]
+    },
+    "Use First Item Only": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Load Configuration": {
+      "main": [[{ "node": "List Prepared Applications", "type": "main", "index": 0 }]]
+    },
+    "List Prepared Applications": {
+      "main": [[{ "node": "IF Resume Is Ready", "type": "main", "index": 0 }]]
+    },
+    "IF Resume Is Ready": {
+      "main": [[{ "node": "Start Form For Review", "type": "main", "index": 0 }]]
+    },
+    "Start Form For Review": {
+      "main": [[{ "node": "Collect Results", "type": "main", "index": 0 }]]
+    },
+    "Collect Results": {
+      "main": [[{ "node": "Stage Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "errorWorkflow": "jaWf10ErrHandler" },
+  "active": false
+}

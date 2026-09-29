@@ -1,0 +1,49 @@
+# EDITABLE EXAMPLE. Copy to config/safe_answers.yaml.
+# Only SAFE_PROFILE and SAFE_JOB_SPECIFIC answers may be listed. Each answer is used only
+# when approved: true, manual_only: false and the field-mapping confidence is high enough.
+# Work authorization, sponsorship, salary, demographic, legal and similar questions are
+# NEVER answered automatically and are rejected by validation if listed here.
+
+answers:
+  - key: first_name
+    patterns: [first name, given name]
+    value: Alex
+    category: SAFE_PROFILE
+    source: candidate_profile.personal.first_name
+    approved: true
+  - key: last_name
+    patterns: [last name, surname, family name]
+    value: Example
+    category: SAFE_PROFILE
+    source: candidate_profile.personal.last_name
+    approved: true
+  - key: email
+    patterns: [email, e-mail]
+    value: alex.example@example.com
+    category: SAFE_PROFILE
+    source: candidate_profile.personal.email
+    approved: true
+  - key: phone
+    patterns: [phone, mobile, telephone]
+    value: "+1-555-0100"
+    category: SAFE_PROFILE
+    source: candidate_profile.personal.phone
+    approved: true
+  - key: city
+    patterns: [city, town]
+    value: Springfield
+    category: SAFE_PROFILE
+    source: candidate_profile.personal.city
+    approved: true
+  - key: linkedin
+    patterns: [linkedin]
+    value: https://www.linkedin.com/in/alex-example
+    category: SAFE_PROFILE
+    source: candidate_profile.personal.linkedin_url
+    approved: true
+  - key: how_did_you_hear
+    patterns: [how did you hear, where did you find]
+    value: Company careers page
+    category: SAFE_JOB_SPECIFIC
+    source: user_config
+    approved: true

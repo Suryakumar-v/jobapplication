@@ -1,0 +1,246 @@
+{
+  "id": "jaWf01Discovery",
+  "name": "01 Job Discovery",
+  "nodes": [
+    {
+      "id": "01000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000002",
+      "name": "Example Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "e1", "name": "input_type", "type": "string", "value": "json" },
+            {
+              "id": "e2",
+              "name": "payload",
+              "type": "object",
+              "value": "{\"company\": \"Example Corp (synthetic)\", \"title\": \"Example Network Engineer\", \"job_url\": \"https://jobs.example.com/openings/example-1\", \"description\": \"Synthetic example posting. Replace this input with a real posting before use.\"}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000003",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 200],
+      "webhookId": "01000000-0000-4000-8000-0000000000a1",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "job-discovery",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Discovery Webhook Key" }
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000004",
+      "name": "Read Webhook Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 200],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "w1",
+              "name": "input_type",
+              "type": "string",
+              "value": "={{ $json.body.input_type }}"
+            },
+            {
+              "id": "w2",
+              "name": "payload",
+              "type": "object",
+              "value": "={{ $json.body.payload }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000005",
+      "name": "Called By Master Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 400],
+      "parameters": { "inputSource": "passthrough" }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000006",
+      "name": "Use First Item Only",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [220, 400],
+      "parameters": { "maxItems": 1 }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000007",
+      "name": "Load Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 200],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "api_url",
+              "type": "string",
+              "value": "={{ $env.JOB_AUTOMATION_API_URL || 'http://host.docker.internal:8000' }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000008",
+      "name": "Check Input Type",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [720, 200],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "chk-type",
+              "leftValue": "={{ ['url', 'text', 'json', 'csv', 'webhook', 'extract'].includes($json.input_type) }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000009",
+      "name": "Import Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [980, 100],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_url }}{{ ({ url: '/jobs/import/url', text: '/jobs/import/text', json: '/jobs/import/json', csv: '/jobs/import/csv', webhook: '/jobs/webhook', extract: '/jobs/extract' })[$json.input_type] }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": { "timeout": 120000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000010",
+      "name": "Stage Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1240, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "stage", "type": "string", "value": "01_job_discovery" },
+            { "id": "s2", "name": "operation", "type": "string", "value": "={{ $json.operation }}" },
+            { "id": "s3", "name": "received", "type": "number", "value": "={{ $json.received }}" },
+            { "id": "s4", "name": "created", "type": "number", "value": "={{ $json.created }}" },
+            { "id": "s5", "name": "duplicates", "type": "number", "value": "={{ $json.duplicates }}" },
+            { "id": "s6", "name": "rejected", "type": "number", "value": "={{ $json.rejected }}" },
+            {
+              "id": "s7",
+              "name": "needs_extraction",
+              "type": "number",
+              "value": "={{ $json.needs_extraction }}"
+            },
+            { "id": "s8", "name": "deferred", "type": "number", "value": "={{ $json.deferred }}" }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000011",
+      "name": "Stop: Unsupported Input Type",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [980, 320],
+      "parameters": {
+        "errorMessage": "input_type must be one of: url, text, json, csv, webhook, extract."
+      }
+    },
+    {
+      "id": "01000000-0000-4000-8000-000000000012",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 01 Job Discovery\nAccepts `input_type` (url, text, json, csv, webhook, extract) and a `payload` in the shape of the matching API endpoint, then calls `POST /jobs/import/*`, `POST /jobs/webhook` or `POST /jobs/extract`. The API normalises, fingerprints and de-duplicates.\n\nTriggers: Manual (replace the example input), authenticated Webhook, or another workflow. `extract` opens the URL read-only in the browser service. No portal is logged in to and nothing is submitted.\n\nRSS feeds and public job APIs are not implemented.",
+        "height": 180,
+        "width": 720
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Example Input", "type": "main", "index": 0 }]]
+    },
+    "Example Input": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Webhook Trigger": {
+      "main": [[{ "node": "Read Webhook Input", "type": "main", "index": 0 }]]
+    },
+    "Read Webhook Input": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Called By Master Workflow": {
+      "main": [[{ "node": "Use First Item Only", "type": "main", "index": 0 }]]
+    },
+    "Use First Item Only": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Load Configuration": {
+      "main": [[{ "node": "Check Input Type", "type": "main", "index": 0 }]]
+    },
+    "Check Input Type": {
+      "main": [
+        [{ "node": "Import Jobs", "type": "main", "index": 0 }],
+        [{ "node": "Stop: Unsupported Input Type", "type": "main", "index": 0 }]
+      ]
+    },
+    "Import Jobs": {
+      "main": [[{ "node": "Stage Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "errorWorkflow": "jaWf10ErrHandler" },
+  "active": false
+}

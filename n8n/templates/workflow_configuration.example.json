@@ -1,0 +1,10 @@
+{
+  "_comment": "Example shape of the configuration object built by the 'Load Workflow Configuration' node. Values come from environment variables; nothing here is a secret.",
+  "api_url": "http://host.docker.internal:8000",
+  "match_threshold": 75,
+  "max_jobs_per_run": 50,
+  "max_applications_per_day": 10,
+  "manual_approval_required": true,
+  "automatic_submission_enabled": false,
+  "ai_enabled": false
+}

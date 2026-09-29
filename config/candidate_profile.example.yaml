@@ -1,0 +1,104 @@
+# EDITABLE EXAMPLE - synthetic data only.
+# Copy to config/candidate_profile.yaml and replace every value with your own facts.
+# The master resume and this profile are the ONLY authoritative sources for tailoring:
+# nothing that is not listed here may be claimed in a tailored resume or application.
+
+personal:
+  first_name: Alex
+  last_name: Example
+  preferred_name: Alex
+  email: alex.example@example.com
+  phone: "+1-555-0100"
+  city: Springfield
+  country: United States
+  linkedin_url: https://www.linkedin.com/in/alex-example
+  portfolio_url: null
+  github_url: https://github.com/alex-example
+  current_job_title: Senior Network Security Engineer
+
+summary: >-
+  Network security engineer with hands-on experience in network access control,
+  firewall policy management and security automation.
+
+total_years_experience: 9
+master_resume_path: resumes/source/master_resume.docx
+
+# Aliases let the matcher recognise equivalent terminology you genuinely have.
+skills:
+  - name: Network Security
+    years: 9
+  - name: NAC
+    aliases: [Network Access Control]
+    years: 6
+  - name: Aruba ClearPass
+    aliases: [ClearPass]
+    years: 5
+  - name: Check Point
+    aliases: [Checkpoint]
+    years: 6
+  - name: Cisco FTD
+    aliases: [Firepower Threat Defense]
+    years: 4
+  - name: Cisco Secure Firewall
+    years: 4
+  - name: cdFMC
+    aliases: [Cloud-delivered FMC]
+    years: 1
+  - name: Cisco SD-WAN
+    aliases: [Viptela]
+    years: 3
+  - name: Splunk
+    years: 4
+  - name: CyberArk
+    years: 3
+  - name: RADIUS
+    years: 7
+  - name: TACACS+
+    aliases: [TACACS]
+    years: 6
+  - name: EAP-TLS
+    years: 5
+  - name: Python automation
+    aliases: [Python]
+    years: 5
+  - name: Firewall policy management
+    years: 8
+  - name: Certificate troubleshooting
+    years: 5
+  - name: Incident management
+    years: 7
+  - name: Change management
+    years: 7
+
+certifications:
+  - name: Example Network Security Certification
+    aliases: [ENSC]
+    issuer: Example Certification Body
+    year: 2022
+
+experience:
+  - employer: Example Networks Inc.
+    title: Senior Network Security Engineer
+    location: Springfield
+    start_date: 2020-03-01
+    end_date: null
+    skills_used: [NAC, Aruba ClearPass, Check Point, Splunk, Python automation]
+    bullets:
+      - Administered network access control policies using Aruba ClearPass with EAP-TLS.
+      - Maintained Check Point firewall policies through a documented change process.
+      - Automated recurring reporting tasks with Python scripts.
+  - employer: Sample Systems Ltd.
+    title: Network Engineer
+    location: Shelbyville
+    start_date: 2017-06-01
+    end_date: 2020-02-28
+    skills_used: [Cisco FTD, RADIUS, TACACS+, Incident management]
+    bullets:
+      - Operated Cisco FTD firewalls and resolved security incidents.
+      - Maintained RADIUS and TACACS+ authentication for network devices.
+
+education:
+  - institution: Example University
+    degree: BSc
+    field_of_study: Computer Networking
+    graduation_year: 2017

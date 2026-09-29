@@ -1,0 +1,40 @@
+# Environment variables used by the workflows and the API
+
+Set these in `.env` (copied from `.env.example`). Docker Compose forwards them to both services.
+The n8n container must have `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` (already set in `docker-compose.yml`)
+so workflow expressions can read `$env`. If you run n8n without Docker, set it in the shell first.
+
+## Safe defaults (do not change without understanding the consequence)
+
+    JOB_MATCH_THRESHOLD=75
+    MANUAL_APPROVAL_REQUIRED=true
+    AUTOMATIC_SUBMISSION_ENABLED=false
+    AI_ENABLED=false
+    PLAYWRIGHT_HEADLESS=false
+
+The API refuses to start and the master workflow stops if `MANUAL_APPROVAL_REQUIRED` is not `true`
+or `AUTOMATIC_SUBMISSION_ENABLED` is not `false`.
+
+## Full list
+
+    JOB_AUTOMATION_API_URL=http://127.0.0.1:8000     # from Docker n8n to a Windows-hosted API: http://host.docker.internal:8000
+    JOB_MATCH_THRESHOLD=75                           # percent, 0-100
+    MAX_JOBS_PER_RUN=50
+    MAX_APPLICATIONS_PER_DAY=10
+    MANUAL_APPROVAL_REQUIRED=true
+    AUTOMATIC_SUBMISSION_ENABLED=false
+    AI_ENABLED=false
+    AI_PROVIDER=none                                 # none | mock | openai_compatible
+    AI_BASE_URL=http://127.0.0.1:11434/v1            # openai_compatible only; a non-local host needs https and AI_ALLOW_REMOTE=true
+    AI_MODEL=                                        # required for openai_compatible
+    AI_API_KEY=                                      # only if the endpoint needs one; .env only, never a workflow
+    AI_TIMEOUT=60                                    # seconds
+    AI_MAX_INPUT_CHARS=8000
+    AI_ALLOW_REMOTE=false
+    DATABASE_PATH=data/job_tracker.db
+    SCREENSHOT_DIRECTORY=screenshots
+    RESUME_DIRECTORY=resumes
+    APPROVAL_TOKEN_EXPIRY=3600                       # seconds
+    PLAYWRIGHT_HEADLESS=false
+    PLAYWRIGHT_SLOW_MO=250                           # milliseconds
+    PLAYWRIGHT_TIMEOUT=30000                         # milliseconds

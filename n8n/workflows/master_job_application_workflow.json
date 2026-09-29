@@ -1,0 +1,321 @@
+{
+  "id": "jaWf00Master",
+  "name": "Master Job Application Workflow",
+  "nodes": [
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000002",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 200],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000003",
+      "name": "Load Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [260, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-api-url",
+              "name": "api_url",
+              "type": "string",
+              "value": "={{ $env.JOB_AUTOMATION_API_URL || 'http://host.docker.internal:8000' }}"
+            },
+            {
+              "id": "cfg-threshold",
+              "name": "match_threshold",
+              "type": "number",
+              "value": "={{ Number($env.JOB_MATCH_THRESHOLD || 75) }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000004",
+      "name": "Check API Health and Safety Flags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [520, 100],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.api_url }}/health",
+        "options": {
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000005",
+      "name": "IF Startup Validation Passed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [780, 100],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "chk-startup-ok",
+              "leftValue": "={{ $json.startup_ok }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            },
+            {
+              "id": "chk-manual-approval",
+              "leftValue": "={{ $json.safety.manual_approval_required }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            },
+            {
+              "id": "chk-auto-submit-off",
+              "leftValue": "={{ $json.safety.automatic_submission_enabled }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "false", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000006",
+      "name": "Startup Validation OK",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1040, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ok-status",
+              "name": "phase_1_status",
+              "type": "string",
+              "value": "Startup validation passed. Running the analysis, tailoring and form-preparation stages."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000007",
+      "name": "Stop: Startup Validation Failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [1040, 200],
+      "parameters": {
+        "errorMessage": "Startup validation failed: the API is degraded, manual approval is disabled, or automatic submission is enabled. Check GET /health."
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000010",
+      "name": "Run 02 Job Normalization",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1300, 0],
+      "alwaysOutputData": true,
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "jaWf02Normalize", "mode": "id" },
+        "options": { "waitForSubWorkflow": true }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000011",
+      "name": "Run 04 Job Analysis",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1560, 0],
+      "alwaysOutputData": true,
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "jaWf04Analysis", "mode": "id" },
+        "options": { "waitForSubWorkflow": true }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000012",
+      "name": "Run 05 Resume Tailoring",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [1820, 0],
+      "alwaysOutputData": true,
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "jaWf05Tailoring", "mode": "id" },
+        "options": { "waitForSubWorkflow": true }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000013",
+      "name": "Run 06 Application Preparation",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [2080, 0],
+      "alwaysOutputData": true,
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "jaWf06Preparation", "mode": "id" },
+        "options": { "waitForSubWorkflow": true }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000014",
+      "name": "Run 07 Manual Approval Queue",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [2340, 0],
+      "alwaysOutputData": true,
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "jaWf07Approval", "mode": "id" },
+        "options": { "waitForSubWorkflow": true }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000015",
+      "name": "Run 09 Tracker Update",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [2600, 0],
+      "alwaysOutputData": true,
+      "parameters": {
+        "workflowId": { "__rl": true, "value": "jaWf09Tracker", "mode": "id" },
+        "options": { "waitForSubWorkflow": true }
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000016",
+      "name": "Final Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [2860, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "analysis",
+              "type": "object",
+              "value": "={{ $('Run 04 Job Analysis').first().json }}"
+            },
+            {
+              "id": "f2",
+              "name": "tailoring",
+              "type": "object",
+              "value": "={{ $('Run 05 Resume Tailoring').first().json }}"
+            },
+            {
+              "id": "f3",
+              "name": "preparation",
+              "type": "object",
+              "value": "={{ $('Run 06 Application Preparation').first().json }}"
+            },
+            {
+              "id": "f4",
+              "name": "approval_queue",
+              "type": "object",
+              "value": "={{ $('Run 07 Manual Approval Queue').first().json }}"
+            },
+            {
+              "id": "f5",
+              "name": "tracker",
+              "type": "object",
+              "value": "={{ $('Run 09 Tracker Update').first().json }}"
+            },
+            {
+              "id": "f6",
+              "name": "next_step",
+              "type": "string",
+              "value": "Review each prepared form in its browser window. Nothing has been submitted."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "6f1c0a10-0000-4000-8000-000000000008",
+      "name": "Note - Startup Validation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, -120],
+      "parameters": {
+        "content": "## Stages run by this workflow\nStartup validation (GET /health and safety flags), then 02 list discovered jobs, 04 analysis, 05 resume tailoring, 06 form preparation (up to 3 review browsers), 07 approval queue and 09 status snapshot. Each stage reads its work from the API, so it does not depend on the previous stage's output.\n\nNot run here: 01 Job Discovery and 03 Duplicate Check take input (URL, text, JSON, CSV, webhook), so run them yourself first. 08 Submission is disabled and never called.\n\nRequires N8N_BLOCK_ENV_ACCESS_IN_NODE=false (set in docker-compose.yml). Import all workflows before running; they call each other by fixed ID. Import into n8n was not tested.",
+        "height": 260,
+        "width": 620
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Load Workflow Configuration", "type": "main", "index": 0 }]]
+    },
+    "Schedule Trigger": {
+      "main": [[{ "node": "Load Workflow Configuration", "type": "main", "index": 0 }]]
+    },
+    "Load Workflow Configuration": {
+      "main": [[{ "node": "Check API Health and Safety Flags", "type": "main", "index": 0 }]]
+    },
+    "Check API Health and Safety Flags": {
+      "main": [[{ "node": "IF Startup Validation Passed", "type": "main", "index": 0 }]]
+    },
+    "IF Startup Validation Passed": {
+      "main": [
+        [{ "node": "Startup Validation OK", "type": "main", "index": 0 }],
+        [{ "node": "Stop: Startup Validation Failed", "type": "main", "index": 0 }]
+      ]
+    },
+    "Startup Validation OK": {
+      "main": [[{ "node": "Run 02 Job Normalization", "type": "main", "index": 0 }]]
+    },
+    "Run 02 Job Normalization": {
+      "main": [[{ "node": "Run 04 Job Analysis", "type": "main", "index": 0 }]]
+    },
+    "Run 04 Job Analysis": {
+      "main": [[{ "node": "Run 05 Resume Tailoring", "type": "main", "index": 0 }]]
+    },
+    "Run 05 Resume Tailoring": {
+      "main": [[{ "node": "Run 06 Application Preparation", "type": "main", "index": 0 }]]
+    },
+    "Run 06 Application Preparation": {
+      "main": [[{ "node": "Run 07 Manual Approval Queue", "type": "main", "index": 0 }]]
+    },
+    "Run 07 Manual Approval Queue": {
+      "main": [[{ "node": "Run 09 Tracker Update", "type": "main", "index": 0 }]]
+    },
+    "Run 09 Tracker Update": {
+      "main": [[{ "node": "Final Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "jaWf10ErrHandler"
+  },
+  "active": false
+}

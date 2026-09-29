@@ -1,0 +1,79 @@
+name: docker-check
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint the Dockerfile
+        run: docker run --rm -i hadolint/hadolint hadolint --failure-threshold error - < Dockerfile
+
+      - name: Create a throwaway .env
+        run: |
+          printf 'API_KEY=%s\nN8N_ENCRYPTION_KEY=%s\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 32)" > .env
+          # Docker Desktop hides Linux bind-mount ownership; the runner user is not uid 1000.
+          chmod -R a+rwX resumes exports
+
+      - name: Validate the compose file
+        run: docker compose config --quiet
+
+      - name: Compose refuses to start without secrets
+        run: |
+          if env -i PATH="$PATH" HOME="$HOME" docker compose --env-file /dev/null config --quiet 2>err.txt; then
+            echo "compose accepted a missing API_KEY"; exit 1
+          fi
+          grep -q "API_KEY" err.txt
+
+      - name: Build and start both services
+        run: docker compose up -d --build --wait --wait-timeout 240
+
+      - name: API health, safety flags and non-root user
+        run: |
+          curl -fsS http://127.0.0.1:8000/health | tee health.json
+          python3 - <<'PY'
+          import json
+          body = json.load(open("health.json"))
+          safety = body["safety"]
+          assert body["startup_ok"] is True, body
+          assert safety["manual_approval_required"] is True
+          assert safety["automatic_submission_enabled"] is False
+          assert safety["violations"] == []
+          PY
+          test "$(docker compose exec -T job-automation-api id -u)" = "1000"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/jobs)" = "401"
+
+      - name: Bundled Chromium launches headless in the image
+        run: |
+          docker compose exec -T job-automation-api python -c "
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              b = p.chromium.launch(headless=True)
+              print(b.version)
+              b.close()
+          "
+
+      - name: n8n reaches the API by service name
+        run: docker compose exec -T n8n wget -qO- http://job-automation-api:8000/health
+
+      - name: n8n imports all workflow files
+        run: |
+          docker compose exec -T n8n n8n import:workflow --separate --input=/workflows
+          docker compose exec -T n8n n8n list:workflow | tee workflows.txt
+          test "$(wc -l < workflows.txt)" -ge 11
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

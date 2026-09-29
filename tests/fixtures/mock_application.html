@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Apply - Network Security Engineer (synthetic)</title>
+</head>
+<body>
+  <!-- Synthetic application form for automated tests. It is not a real employer or portal. -->
+  <main>
+    <h1>Apply: Network Security Engineer</h1>
+    <form id="application" action="/submit" method="post" enctype="multipart/form-data">
+      <div>
+        <label for="first_name">First name *</label>
+        <input id="first_name" name="first_name" type="text" required>
+      </div>
+      <div>
+        <label for="last_name">Last name *</label>
+        <input id="last_name" name="last_name" type="text" required>
+      </div>
+      <div>
+        <label for="email">Email address *</label>
+        <input id="email" name="email" type="email" required>
+      </div>
+      <div>
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel">
+      </div>
+      <div>
+        <label for="city">City</label>
+        <input id="city" name="city" type="text">
+      </div>
+      <div>
+        <label for="ln">LinkedIn profile URL</label>
+        <input id="ln" name="linkedInUrl" type="url">
+      </div>
+      <div>
+        <label for="source">How did you hear about us?</label>
+        <select id="source" name="source">
+          <option value="">Select...</option>
+          <option value="careers">Company careers page</option>
+          <option value="board">Job board</option>
+        </select>
+      </div>
+      <div>
+        <label for="resume">Resume/CV *</label>
+        <input id="resume" name="resume" type="file" required>
+      </div>
+      <div>
+        <label for="cover">Cover letter</label>
+        <input id="cover" name="cover" type="file">
+      </div>
+
+      <h2>Additional questions</h2>
+      <div>
+        <label for="salary">What are your salary expectations?</label>
+        <input id="salary" name="salary" type="text">
+      </div>
+      <div>
+        <label for="dob">Date of birth</label>
+        <input id="dob" name="dob" type="text">
+      </div>
+      <div>
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender">
+          <option>Select...</option>
+          <option>Female</option>
+          <option>Male</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+      <fieldset>
+        <legend>Are you legally authorized to work in this country?</legend>
+        <label><input type="radio" name="auth" value="yes"> Yes</label>
+        <label><input type="radio" name="auth" value="no"> No</label>
+      </fieldset>
+      <div>
+        <label for="sponsor">Will you now or in the future require visa sponsorship?</label>
+        <select id="sponsor" name="sponsor">
+          <option>Select...</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
+      <div>
+        <label for="why">Why do you want to work here?</label>
+        <textarea id="why" name="why"></textarea>
+      </div>
+      <div>
+        <label for="lang">Language proficiency</label>
+        <input id="lang" name="language" type="text">
+      </div>
+      <div>
+        <label for="mgr">Manager name</label>
+        <input id="mgr" name="manager" type="text">
+      </div>
+      <div>
+        <label for="ref_email">Reference email</label>
+        <input id="ref_email" name="ref_email" type="email">
+      </div>
+      <div>
+        <label for="disabled_city">City (disabled)</label>
+        <input id="disabled_city" name="disabled_city" type="text" disabled>
+      </div>
+      <input type="hidden" name="csrf" value="synthetic">
+      <div>
+        <label><input type="checkbox" name="consent" value="yes"> I agree to the privacy policy</label>
+      </div>
+      <button id="submit" type="submit">Submit application</button>
+    </form>
+  </main>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Portal support status. NO portal has been validated. Adapters are added and validated in later
+# phases against the local synthetic application only; live portals require your explicit approval.
+
+field_mapping_confidence_threshold: 0.85
+allow_login_automation: false
+allow_captcha_or_mfa_bypass: false   # must stay false; validation rejects true
+
+portals:
+  generic:
+    enabled: true
+    support_level: experimental
+    validated: false
+    notes: Label/name based form detection; validated only against the synthetic mock page (Phase 5).
+  greenhouse:
+    enabled: false
+    support_level: not_validated
+    validated: false
+    notes: Adapter not yet implemented or validated.
+  lever:
+    enabled: false
+    support_level: not_validated
+    validated: false
+    notes: Adapter not yet implemented or validated.
+  workday:
+    enabled: false
+    support_level: unsupported
+    validated: false
+    notes: Multi-step, login-gated flow. Not supported; jobs are routed to manual review.

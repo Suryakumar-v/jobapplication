@@ -1,0 +1,147 @@
+{
+  "id": "jaWf02Normalize",
+  "name": "02 Job Normalization",
+  "nodes": [
+    {
+      "id": "02000000-0000-4000-8000-000000000001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "02000000-0000-4000-8000-000000000002",
+      "name": "Called By Master Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 200],
+      "parameters": { "inputSource": "passthrough" }
+    },
+    {
+      "id": "02000000-0000-4000-8000-000000000003",
+      "name": "Use First Item Only",
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [220, 200],
+      "parameters": { "maxItems": 1 }
+    },
+    {
+      "id": "02000000-0000-4000-8000-000000000004",
+      "name": "Load Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "api_url",
+              "type": "string",
+              "value": "={{ $env.JOB_AUTOMATION_API_URL || 'http://host.docker.internal:8000' }}"
+            },
+            {
+              "id": "c2",
+              "name": "max_jobs_per_run",
+              "type": "number",
+              "value": "={{ Math.min(Number($env.MAX_JOBS_PER_RUN || 50), 200) }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "02000000-0000-4000-8000-000000000005",
+      "name": "List Discovered Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, 100],
+      "alwaysOutputData": true,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.api_url }}/jobs?status=DISCOVERED&limit={{ $json.max_jobs_per_run }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 30000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Job Automation API Key" }
+      }
+    },
+    {
+      "id": "02000000-0000-4000-8000-000000000006",
+      "name": "Collect Jobs",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1000, 100],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "items",
+        "options": {}
+      }
+    },
+    {
+      "id": "02000000-0000-4000-8000-000000000007",
+      "name": "Stage Summary",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1260, 100],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "s1", "name": "stage", "type": "string", "value": "02_job_normalization" },
+            {
+              "id": "s2",
+              "name": "discovered_jobs",
+              "type": "number",
+              "value": "={{ ($json.items || []).filter(j => j.job_id).length }}"
+            },
+            {
+              "id": "s3",
+              "name": "jobs",
+              "type": "array",
+              "value": "={{ ($json.items || []).filter(j => j.job_id).map(j => ({ job_id: j.job_id, company: j.company, title: j.title, fingerprint: j.fingerprint })) }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "02000000-0000-4000-8000-000000000008",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 02 Job Normalization (read-only view)\nNormalisation (URL canonicalisation, company/title/location cleanup, fingerprint, job ID) happens inside the API when a job is imported. This stage lists the normalised jobs still in DISCOVERED status via `GET /jobs?status=DISCOVERED` so they can be reviewed before analysis. It changes nothing.",
+        "height": 140,
+        "width": 720
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Called By Master Workflow": {
+      "main": [[{ "node": "Use First Item Only", "type": "main", "index": 0 }]]
+    },
+    "Use First Item Only": {
+      "main": [[{ "node": "Load Configuration", "type": "main", "index": 0 }]]
+    },
+    "Load Configuration": {
+      "main": [[{ "node": "List Discovered Jobs", "type": "main", "index": 0 }]]
+    },
+    "List Discovered Jobs": {
+      "main": [[{ "node": "Collect Jobs", "type": "main", "index": 0 }]]
+    },
+    "Collect Jobs": {
+      "main": [[{ "node": "Stage Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "errorWorkflow": "jaWf10ErrHandler" },
+  "active": false
+}

@@ -1,0 +1,57 @@
+# Terms the matcher can recognise in job descriptions. This is NOT a list of your skills:
+# the candidate profile alone decides what you have. Terms you lack are reported as "missing".
+# Your profile skills, certifications and search-preference skills are added automatically.
+# Names of 3 characters or fewer are matched case-sensitively.
+# Entries may be plain strings or {name, aliases}.
+
+skills:
+  - Network Security
+  - {name: Firewall policy management, aliases: [Firewall policies, Firewall rule management]}
+  - {name: NAC, aliases: [Network Access Control]}
+  - {name: Aruba ClearPass, aliases: [ClearPass]}
+  - {name: Cisco ISE, aliases: [Identity Services Engine]}
+  - {name: Check Point, aliases: [Checkpoint]}
+  - {name: Palo Alto, aliases: [Palo Alto Networks, PAN-OS, Panorama]}
+  - {name: Fortinet, aliases: [FortiGate]}
+  - {name: Cisco FTD, aliases: [Firepower Threat Defense]}
+  - Cisco Secure Firewall
+  - {name: cdFMC, aliases: [Cloud-delivered FMC]}
+  - {name: Cisco SD-WAN, aliases: [Viptela]}
+  - {name: Zscaler, aliases: [ZIA, ZPA]}
+  - Splunk
+  - CyberArk
+  - RADIUS
+  - {name: TACACS+, aliases: [TACACS]}
+  - EAP-TLS
+  - {name: 802.1X, aliases: [dot1x]}
+  - {name: Python automation, aliases: [Python]}
+  - Ansible
+  - Terraform
+  - PowerShell
+  - {name: Kubernetes, aliases: [K8s]}
+  - AWS
+  - Azure
+  - {name: SIEM, aliases: [Security information and event management]}
+  - {name: Zero Trust, aliases: [ZTNA]}
+  - VPN
+  - {name: Load balancing, aliases: [F5, F5 BIG-IP]}
+  - Certificate troubleshooting
+  - {name: PKI, aliases: [Public key infrastructure]}
+  - Incident management
+  - Change management
+  - {name: Vulnerability management, aliases: [Tenable, Nessus, Qualys]}
+  - {name: Wireshark, aliases: [Packet analysis]}
+
+certifications:
+  - {name: CISSP, aliases: [Certified Information Systems Security Professional]}
+  - {name: CCNP, aliases: [CCNP Security, Cisco Certified Network Professional]}
+  - {name: CCIE, aliases: [Cisco Certified Internetwork Expert]}
+  - CCNA
+  - CISM
+  - {name: Security+, aliases: [CompTIA Security+]}
+  - {name: CEH, aliases: [Certified Ethical Hacker]}
+  - {name: PCNSE, aliases: [Palo Alto Certified Network Security Engineer]}
+  - {name: CCSA, aliases: [Check Point Certified Security Administrator]}
+  - {name: CCSE, aliases: [Check Point Certified Security Expert]}
+  - {name: ACCP, aliases: [Aruba Certified ClearPass Professional]}
+  - {name: AWS Certified Security, aliases: [AWS Security Specialty]}

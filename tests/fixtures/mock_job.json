@@ -1,0 +1,11 @@
+{
+  "company": "Synthetic Networks Ltd",
+  "title": "Network Security Engineer",
+  "description": "Synthetic posting for tests. Required: Network Security, RADIUS, Firewall policy management. Preferred: Aruba ClearPass, Splunk.",
+  "job_url": "https://jobs.example.com/openings/12345?utm_source=test",
+  "external_id": "SYN-12345",
+  "location": "Springfield",
+  "employment_type": "Full-time",
+  "workplace_type": "HYBRID",
+  "source": "MANUAL_URL"
+}

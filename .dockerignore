@@ -1,0 +1,17 @@
+.venv
+.git
+.env
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+data
+logs
+screenshots
+exports
+resumes
+n8n/data
+tests
+config/candidate_profile.yaml
+config/search_preferences.yaml
+config/safe_answers.yaml

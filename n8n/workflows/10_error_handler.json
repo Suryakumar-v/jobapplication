@@ -1,0 +1,77 @@
+{
+  "id": "jaWf10ErrHandler",
+  "name": "10 Error Handler",
+  "nodes": [
+    {
+      "id": "10000000-0000-4000-8000-000000000001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "parameters": {}
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000002",
+      "name": "Format Error Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [260, 0],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "workflow_name",
+              "type": "string",
+              "value": "={{ $json.workflow.name }}"
+            },
+            {
+              "id": "r2",
+              "name": "execution_id",
+              "type": "string",
+              "value": "={{ String($json.execution.id) }}"
+            },
+            {
+              "id": "r3",
+              "name": "failed_node",
+              "type": "string",
+              "value": "={{ $json.execution.lastNodeExecuted }}"
+            },
+            {
+              "id": "r4",
+              "name": "error_message",
+              "type": "string",
+              "value": "={{ $json.execution.error.message }}"
+            },
+            {
+              "id": "r5",
+              "name": "action_taken",
+              "type": "string",
+              "value": "None. No automatic retry and nothing was submitted. Open the execution in n8n, fix the cause and re-run the stage."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000003",
+      "name": "Note - Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-20, -200],
+      "parameters": {
+        "content": "## 10 Error Handler\nSet as the error workflow of workflows 01-09 and the master. It formats a report that stays visible in n8n's execution list. It does not retry, submit, or send anything. Add a notification node here if you want e-mail or chat alerts (needs a credential you create in the UI).",
+        "height": 150,
+        "width": 620
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [[{ "node": "Format Error Report", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "active": false
+}
