@@ -15,7 +15,7 @@ Last updated: 2026-09-29 (Phase 10)
 | 7 | Manual approval and submission gate | **Complete and validated against the synthetic site only** (see below) |
 | 8 | Tracker export | **Complete and validated with synthetic data; opened once in desktop Excel 16.0 (see Phase 10)** (see below) |
 | 9 | Optional AI | **Complete and validated with a mock provider and a fake HTTP transport; no real model was ever contacted** (see below) |
-| 10 | Final end-to-end validation | **Complete for the local, synthetic-only path; n8n, Docker, real portals and real AI models remain untested** (see below) |
+| 10 | Final end-to-end validation | **Complete for the local, synthetic-only path; Docker verified in GitHub Actions; n8n execution, real portals and real AI models remain untested** (see below) |
 
 ## Phase 1: implemented and tested
 
@@ -324,7 +324,7 @@ Phase 9 limitations:
 | `ruff check .` / `ruff format --check .` | All checks passed; 97 files already formatted |
 | `mypy` (strict) | no issues in 92 source files |
 | `pip check` | no broken requirements |
-| `pytest` | **453 passed, 0 failed** (3 in `tests/test_end_to_end.py`, 16 in `tests/test_docker_config.py`) |
+| `pytest` | **454 passed, 0 failed** (3 in `tests/test_end_to_end.py`, 16 in `tests/test_docker_config.py`) |
 | `run.py validate-config` / `validate-workflows` | config: 3 expected example-file WARNs; all 11 workflow files OK |
 
 The end-to-end tests were also re-run alone after a later edit to that file (3 passed).
@@ -338,7 +338,8 @@ This validates the Python service, the approval gate and the tracker export toge
 ## Not verified / known limitations
 
 - **n8n workflows were imported but never executed.** On 2026-09-29 `n8n import:workflow --separate` (n8n 2.41.3, the version pinned in `docker-compose.yml`, installed with a portable Node 24 outside the project) imported all 11 files into a throwaway database ("Successfully imported 11 workflows", ids `jaWf00Master` to `jaWf10ErrHandler` listed by `list:workflow`). The n8n server, the editor, the credential setup, the schedule triggers and every node's runtime behaviour were not run. Node `typeVersion` values (IF 2.2, Set 3.4, HTTP Request 4.2, Schedule Trigger 1.2) were accepted by the importer, which does not prove they behave correctly.
-- **Docker build and `docker compose up` were not run locally.** Docker Desktop refused to start on this machine ("Virtualization support not detected", WSL not installed), and it was later removed. Substitutes: `tests/test_docker_config.py` (static checks of the Dockerfile, compose file, `.dockerignore` and `requirements.txt` coverage) and a native simulation (Dockerfile COPY set plus a clean venv install). The simulation found that `httpx` was missing from `requirements.txt` (it would have crashed the image at start-up); that is fixed. `.github/workflows/docker-check.yml` runs the real build, `compose up`, health, non-root, Chromium and n8n import checks on GitHub; its result is recorded below once it has run.
+- **Docker build and `docker compose up` were not run locally.** Docker Desktop refused to start on this machine ("Virtualization support not detected", WSL not installed), and it was later removed. Substitutes: `tests/test_docker_config.py` (static checks of the Dockerfile, compose file, `.dockerignore` and `requirements.txt` coverage) and a native simulation (Dockerfile COPY set plus a clean venv install). The simulation found that `httpx` was missing from `requirements.txt` (it would have crashed the image at start-up); that is fixed. `.github/workflows/docker-check.yml` runs the real build, `compose up`, health, non-root, Chromium and n8n import checks on GitHub; its result is recorded in the next item.
+- **GitHub Actions `docker-check` passed on commit `f83a869` (run #4, 2m 9s, ubuntu-latest).** It ran hadolint, `compose config`, the refusal to start without each secret, the image build and `compose up --wait` for both services, `/health` with `startup_ok` true and safe flags, the API running as uid 1000, `/jobs` returning 401 without a key, headless Chromium launching in the image, n8n reaching the API by service name, and `n8n import:workflow` (11 workflows listed). Earlier runs found and led to three fixes: `/health` treated the read-only config mount as unwritable, the secrets check depended on which missing variable compose named first, and the import raced n8n's start-up migrations. Not covered by CI: the n8n server executing any workflow, real portals and real AI models.
 - In a container the review browser is headless, so form review for approval should run on the host, not in Docker.
 - Chromium is not installed (the download timed out in Phase 5); an installed Edge was used instead, see Phase 5 limitations. `/health` only checks the Python package.
 - No community Playwright node has been evaluated or installed.
