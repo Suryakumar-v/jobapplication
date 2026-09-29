@@ -71,6 +71,12 @@ jobs:
 
       - name: n8n imports all workflow files
         run: |
+          # The server runs its database migrations at startup; importing earlier races them.
+          for i in $(seq 1 60); do
+            docker compose exec -T n8n wget -qO- http://127.0.0.1:5678/healthz && break
+            sleep 3
+          done
+          docker compose exec -T n8n wget -qO- http://127.0.0.1:5678/healthz
           docker compose exec -T n8n n8n import:workflow --separate --input=/workflows
           docker compose exec -T n8n n8n list:workflow | tee workflows.txt
           test "$(wc -l < workflows.txt)" -ge 11
